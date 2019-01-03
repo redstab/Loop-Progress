@@ -16,16 +16,7 @@ int main()
 
 	loop for_loop;
 	for_loop.progress = true;
+	for_loop.new_line = false;
 	for_loop(n, m, expression, change, body);
 	std::cout << d << std::endl;
-	//loop(n, m, [](int c) {std::cout << c << std::endl; }, [](int c, int m) {return c < m; });
-	//int n = 0;
-	//int max = INT_MAX;
-	//std::thread prog(progress, &n, max);
-
-	//while (n < max) {
-	//	n++;
-	//}
-
-	//prog.join();
 }
