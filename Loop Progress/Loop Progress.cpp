@@ -1,21 +1,31 @@
-// Loop Progress.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include "pch.h"
-#include <iostream>
+#include "loop.h"
 
 int main()
 {
-    std::cout << "Hello World!\n"; 
+	int n = 0;
+	int m = 100000000000;
+
+	long long d = 0;
+
+	auto expression = [&](int c) {return c < m; };
+	auto change = [](int &c) {c++; };
+	auto body = [&](int c) {
+		d += c * 2;
+	};
+
+	loop for_loop;
+	for_loop.progress = true;
+	for_loop(n, m, expression, change, body);
+	std::cout << d << std::endl;
+	//loop(n, m, [](int c) {std::cout << c << std::endl; }, [](int c, int m) {return c < m; });
+	//int n = 0;
+	//int max = INT_MAX;
+	//std::thread prog(progress, &n, max);
+
+	//while (n < max) {
+	//	n++;
+	//}
+
+	//prog.join();
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
