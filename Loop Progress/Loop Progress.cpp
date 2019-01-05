@@ -11,12 +11,13 @@ int main()
 	auto expression = [&](int c) {return c < m; };
 	auto change = [](int &c) {c++; };
 	auto body = [&](int c) {
+
 		d += c * 2;
+
 	};
 
 	loop for_loop;
 	for_loop.progress = true;
-	for_loop.new_line = false;
 	for_loop(n, m, expression, change, body);
 	std::cout << d << std::endl;
 }
