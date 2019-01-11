@@ -25,6 +25,7 @@ void loop::loop_progress(int * active, double maximum)
 
 		double progress = (100 * (*active / maximum));
 		if (progress - prev_progress >= updatethresh) {
+			std::string end_string = (new_line) ? "\n" : "\r";
 			auto finish = std::chrono::high_resolution_clock::now();
 			double diff_from_start = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
 			eta = abs((FmilliTmin((diff_from_start - prev_result) * (stepsto100))) - FmilliTmin(diff_from_start));
@@ -38,6 +39,5 @@ void loop::loop_progress(int * active, double maximum)
 	std::cout << "Progress: " << (100 * (*active / maximum)) << "%" << " eta: zero" << std::endl;
 	auto finish = std::chrono::high_resolution_clock::now();
 	double s = std::chrono::duration_cast<std::chrono::seconds>(finish - start).count();
-	std::cout << s << std::endl;
 	loop::cursor();
 }
