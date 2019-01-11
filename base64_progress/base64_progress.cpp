@@ -149,9 +149,9 @@ string base64_decode(std::string const& encoded_string, string name = "Progress:
 
 string encode64(string filename) {
 	ifstream fin(filename, ios::binary);
-	ostringstream ostring;
-	ostring << fin.rdbuf();
-	string dout = ostring.str();
+	stringstream osstring;
+	osstring << fin.rdbuf();
+	string dout = osstring.str();
 	return base64_encode((const unsigned char *)dout.c_str(), dout.length());
 }
 
@@ -163,14 +163,15 @@ vector<string> encode_vector(vector<string> filenames) {
 		ostringstream ostring;
 		ostring << fin.rdbuf();
 		string dout = ostring.str();
-		base_64.push_back(base64_encode((const unsigned char *)dout.c_str(), dout.length(), file));
+		cout << "Encrypted = "<<base64_encode((const unsigned char *)dout.c_str(), dout.length(), file).substr(0,10) << "..." << endl;
+		fin.close();
 	}
 	return base_64;
 }
 
 vector<string> encode_directory(string path) {
 	vector<string> file_path;
-	for (auto file : experimental::filesystem::directory_iterator(path)) {
+	for (auto file : experimental::filesystem::recursive_directory_iterator(path)) {
 		file_path.push_back(file.path().string());
 	}
 	return encode_vector(file_path);
@@ -203,5 +204,5 @@ void display_vector(vector<T> t) {
 int main()
 {
 	//cout << time_function(encode64, "c:\\a\\s.nrg").substr(0, 100) << endl;
-	display_vector(encode_directory("c:\\a\\test"));
+	encode_directory("c:\\arc");
 }
