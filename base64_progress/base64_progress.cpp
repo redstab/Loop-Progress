@@ -2,16 +2,30 @@
 #include "pch.h"
 #include "loop.h"
 using namespace std;
+
+template<class...Durations, class DurationIn>
+std::tuple<Durations...> break_down_durations(DurationIn d) {
+	std::tuple<Durations...> retval;
+	using discard = int[];
+	(void)discard {0, (void(((std::get<Durations>(retval) = std::chrono::duration_cast<Durations>(d)), (d -= std::chrono::duration_cast<DurationIn>(std::get<Durations>(retval))))), 0)...};
+	return retval;
+}
+
 template<class duration_value>
 struct Timer {
 	std::chrono::time_point<std::chrono::steady_clock> start, end;
+	
 	Timer() {
 		start = std::chrono::high_resolution_clock::now();
 	}
+
 	~Timer() {
 		end = std::chrono::high_resolution_clock::now();
-		cout << endl << "Took function " << chrono::duration_cast<duration_value>(end - start).count() << " to Execute" << endl;
+		//https://en.cppreference.com/w/cpp/language/structured_binding
+		auto [h, m, s, ms, ns] = break_down_durations<chrono::hours, chrono::minutes, chrono::seconds, chrono::milliseconds, chrono::nanoseconds>(end - start);
+		cout << endl << "Took function " <<  h.count() << "h : " << m.count() << "m : " << s.count() << "s : " << ms.count() <<"ms to Execute" << endl;
 	}
+
 };
 
 template<class T, typename... Args>
@@ -19,6 +33,7 @@ auto time_function(T func, Args... args) -> decltype(func(args...)) {
 	Timer<chrono::milliseconds> t;
 	return func(args...);
 }
+
 
 void cursor(bool f)
 {
@@ -46,7 +61,7 @@ void progress(int * active, double temp, string name = "Progress: ") {
 			double diff_from_start = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
 			eta = abs((FmilliTmin((diff_from_start - prev_result) * (stepsto100))) - FmilliTmin(diff_from_start));
 			std::string current_eta = std::to_string(int(trunc(eta))) + ":" + std::to_string(abs(int(trunc((eta - trunc(eta)) * 60))));
-			std::cout << std::setprecision(2) << std::fixed << name << " " << progress << "\% eta: " << current_eta << std::string(20, ' ') << "\r";
+			std::cout << std::setprecision(2) << std::fixed << name << " " << progress << "% eta: " << current_eta << std::string(20, ' ') << "\r";
 			prev_result = diff_from_start;
 			prev_progress = progress;
 		}
@@ -170,26 +185,31 @@ vector<string> encode_vector(vector<string> filenames) {
 	return base_64;
 }
 
-vector<string> encode_directory_r(string path) {
-	vector<string> file_path;
-	for (auto file : experimental::filesystem::recursive_directory_iterator(path)) {
-		if (experimental::filesystem::is_regular_file(file)) {
-			file_path.push_back(file.path().string());
+auto encode_file = [](experimental::filesystem::directory_entry s) {
+	ifstream fin(s, ios::binary);
+	ostringstream os;
+	os << fin.rdbuf();
+	string dout = os.str();
+	cout << "Encrypted = " << base64_encode((const unsigned char *)dout.c_str(), dout.length(), s.path().string()).substr(0, 200) << "..." << endl << endl;
+	fin.close();
+};
+
+void encode_directory_r(string path) {
+	Timer<chrono::milliseconds> start;
+	for (experimental::filesystem::directory_entry s : experimental::filesystem::recursive_directory_iterator(path)) {
+		if (experimental::filesystem::is_regular_file(s)) {
+			encode_file(s);
 		}
 	}
-	return encode_vector(file_path);
 }
-vector<string> encode_directory(string path) {
-	vector<string> file_path;
-	for (auto file : experimental::filesystem::directory_iterator(path)) {
-		if (experimental::filesystem::is_regular_file(file)) {
-			file_path.push_back(file.path().string());
+void encode_directory(string path) {
+	Timer<chrono::milliseconds> start;
+	for (experimental::filesystem::directory_entry s : experimental::filesystem::recursive_directory_iterator(path)) {
+		if (experimental::filesystem::is_regular_file(s)) {
+			encode_file(s);
 		}
 	}
-	return encode_vector(file_path);
 }
-
-
 
 void decode64(string b64, string output) {
 	ofstream fout(output, ios::binary);
@@ -204,9 +224,11 @@ string string2b64(string input) {
 string b64tostring(string base64) {
 	return base64_decode(base64);
 }
+
 void test_func() {
 	Sleep(1000);
 }
+
 template<typename T>
 void display_vector(vector<T> t) {
 	for (auto i : t) {
@@ -216,21 +238,5 @@ void display_vector(vector<T> t) {
 
 int main()
 {
-	{
-		Timer<chrono::milliseconds> start;
-		auto i = experimental::filesystem::directory_iterator("c:\\arc");
-		for (experimental::filesystem::directory_entry s : i) {
-			if (experimental::filesystem::is_regular_file(s)) {
-				ifstream fin(s, ios::binary);
-				
-				string dout((istreambuf_iterator<char>(fin.rdbuf())), istreambuf_iterator<char>());
-				cout << "Encrypted = " << base64_encode((const unsigned char *)dout.c_str(), dout.length(), s.path().string()).substr(0, 200) << "..." << endl << endl;
-				fin.close();
-			}
-
-		}
-	}
-
-	//cout << time_function(encode64, "c:\\a\\s.nrg").substr(0, 100) << endl;
-	encode_directory("c:\\windows");
+	encode_directory("c:\\");
 }
