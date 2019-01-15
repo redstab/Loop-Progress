@@ -11,7 +11,6 @@ std::tuple<Durations...> break_down_durations(DurationIn d) {
 	return retval;
 }
 
-template<class duration_value>
 struct Timer {
 	std::chrono::time_point<std::chrono::steady_clock> start, end;
 	
@@ -30,7 +29,7 @@ struct Timer {
 
 template<class T, typename... Args>
 auto time_function(T func, Args... args) -> decltype(func(args...)) {
-	Timer<chrono::milliseconds> t;
+	Timer t;
 	return func(args...);
 }
 
@@ -195,7 +194,6 @@ auto encode_file = [](experimental::filesystem::directory_entry s) {
 };
 
 void encode_directory_r(string path) {
-	Timer<chrono::milliseconds> start;
 	for (experimental::filesystem::directory_entry s : experimental::filesystem::recursive_directory_iterator(path)) {
 		if (experimental::filesystem::is_regular_file(s)) {
 			encode_file(s);
@@ -203,7 +201,6 @@ void encode_directory_r(string path) {
 	}
 }
 void encode_directory(string path) {
-	Timer<chrono::milliseconds> start;
 	for (experimental::filesystem::directory_entry s : experimental::filesystem::recursive_directory_iterator(path)) {
 		if (experimental::filesystem::is_regular_file(s)) {
 			encode_file(s);
@@ -236,7 +233,102 @@ void display_vector(vector<T> t) {
 	}
 }
 
+void throw_error(string message, int error_code) {
+	MessageBoxA(NULL, message.c_str(), "Error!", MB_ICONERROR | MB_OK);
+	exit(error_code);
+}
+void display_min_max(vector<char> min, vector<char> max) {
+	cout << endl << "max: ";
+	for (auto c : max) {
+		cout << "|" << c << "| ";
+	}
+	cout << endl << "min: ";
+	for (auto c : min) {
+		cout << "|" << c << "| ";
+	}
+}
+template<typename T>
+void reverse_vector(vector<T> & input) {
+	reverse(input.begin(), input.end());
+}
+
+class unlimint {
+public:
+	unlimint(string input);
+	friend ostream &operator<<(ostream &output, const unlimint &I) {
+		output << "Digits: ";
+		for (auto c : I.digits) {
+			output << "|" << c << "| ";
+		}
+		return output;
+	}
+	int operator[](int index) {
+		if (index <= num_digits) {
+			return digits[index] - '0';
+		}
+		else {
+			throw_error(to_string(index) + " is out of the vector range of " + to_string(num_digits) + ".", 1);
+		}
+	};
+	unlimint operator+(unlimint input) {
+		vector<string> result;
+		
+		vector<char> max_input = ((digits.size() < input.digits.size()) ? input.digits : digits);
+		vector<char> min_input = ((digits.size() > input.digits.size()) ? input.digits : digits);
+
+		display_min_max(min_input, max_input);
+
+		reverse_vector(max_input);
+		reverse_vector(min_input);
+
+		int required_padding = max_input.size() - min_input.size();
+
+		for (auto i = 0; i < required_padding; i++) {
+			min_input.push_back('0');
+		}
+		
+		int vector_size = (max_input.size() + min_input.size()) / 2;
+		cout << endl;
+		for (auto i = 0; i < vector_size; i++) {
+			result.push_back(to_string(((max_input[i] - '0') + (min_input[i] - '0'))));
+		}
+
+		display_min_max(min_input, max_input);
+		cout << endl;
+		for (auto c : result) {
+			cout << "|" << c << "| ";
+		}
+		
+		return unlimint(string(digits.begin(), digits.end()) + string(input.digits.begin(), input.digits.end()));
+	}
+	int number_of_digits() {
+		return num_digits;
+	}
+private:
+	bool isInt(string input) { return [&](bool return_value = true) {for (auto c : input) { if (!isdigit(c)) { return_value = false; break; } } return return_value; }(); };
+	vector<char> digits;
+	int num_digits;
+};
+
+
 int main()
 {
-	encode_directory("c:\\");
+	unlimint s("123456789022342324432");
+	unlimint a("11817237232");
+	cout << s << endl;
+	cout << "#Digits = " << s.number_of_digits() << endl;
+	cout << "Index[1] = " << s[1] << endl;
+	s + a;
+	//encode_directory("c:\\");
+}
+
+unlimint::unlimint(string input)
+{
+	if (isInt(input)) {
+		copy(input.begin(), input.end(), back_inserter(digits));
+		num_digits = digits.size();
+	}
+	else {
+		throw_error("Non digit detected in constructor.", 1);
+	}
 }
