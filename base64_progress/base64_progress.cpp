@@ -1,4 +1,5 @@
 #include <vector>
+#include <numeric>
 #include "pch.h"
 #include "loop.h"
 using namespace std;
@@ -256,9 +257,8 @@ class unlimint {
 public:
 	unlimint(string input);
 	friend ostream &operator<<(ostream &output, const unlimint &I) {
-		output << "Digits: ";
 		for (auto c : I.digits) {
-			output << "|" << c << "| ";
+			output << c ;
 		}
 		return output;
 	}
@@ -276,8 +276,6 @@ public:
 		vector<char> max_input = ((digits.size() < input.digits.size()) ? input.digits : digits);
 		vector<char> min_input = ((digits.size() > input.digits.size()) ? input.digits : digits);
 
-		display_min_max(min_input, max_input);
-
 		reverse_vector(max_input);
 		reverse_vector(min_input);
 
@@ -288,18 +286,27 @@ public:
 		}
 		
 		int vector_size = (max_input.size() + min_input.size()) / 2;
-		cout << endl;
+		int memory = 0;
 		for (auto i = 0; i < vector_size; i++) {
-			result.push_back(to_string(((max_input[i] - '0') + (min_input[i] - '0'))));
+			int result_value = ((max_input[i] - '0') + (min_input[i] - '0')) + memory;
+			result.push_back(to_string(result_value));
 		}
 
-		display_min_max(min_input, max_input);
-		cout << endl;
-		for (auto c : result) {
-			cout << "|" << c << "| ";
+		for (auto i = 0; i < vector_size; i++) {
+			int current_number = atoi(result[i].c_str());
+			if (current_number >= 10) {
+				int base = ((10 % current_number) / 10);
+				string number = to_string( current_number % 10 );
+				int next = atoi(result[i + 1].c_str());
+				string result_number = to_string(next + base);
+				result[i] = number;
+				result[i + 1] = result_number ;
+			}
 		}
-		
-		return unlimint(string(digits.begin(), digits.end()) + string(input.digits.begin(), input.digits.end()));
+		reverse_vector(result);
+		string output;
+		for (auto const& s : result) { output += s; }
+		return unlimint(output);
 	}
 	int number_of_digits() {
 		return num_digits;
@@ -313,12 +320,9 @@ private:
 
 int main()
 {
-	unlimint s("123456789022342324432");
-	unlimint a("11817237232");
-	cout << s << endl;
-	cout << "#Digits = " << s.number_of_digits() << endl;
-	cout << "Index[1] = " << s[1] << endl;
-	s + a;
+	unlimint s("9182375498326512784432568735613265489375312976539861239748612537964512384795236765756346432464235243523342918237549832651278443256873561326548937531297653986123974861253796451238479523676575634643246423524352334291823754983265127844325687356132654893753129765398612397486125379645123847952367657563464324642352435233429182375498326512784432568735613265489375312976539861239748612537964512384795236765756346432464235243523342918237549832651278443256873561326548937531297653986123974861253796451238479523676575634643246423524352334291823754983265127844325687356132654893753129765398612397486125379645123847952367657563464324642352435233429182375498326512784432568735613265489375312976539861239748612537964512384795236765756346432464235243523342");
+	unlimint a("132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868");
+	cout << s + a;
 	//encode_directory("c:\\");
 }
 
