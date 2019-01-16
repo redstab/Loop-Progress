@@ -8,13 +8,15 @@ template<class...Durations, class DurationIn>
 std::tuple<Durations...> break_down_durations(DurationIn d) {
 	std::tuple<Durations...> retval;
 	using discard = int[];
-	(void)discard {0, (void(((std::get<Durations>(retval) = std::chrono::duration_cast<Durations>(d)), (d -= std::chrono::duration_cast<DurationIn>(std::get<Durations>(retval))))), 0)...};
+	(void)discard {
+		0, (void(((std::get<Durations>(retval) = std::chrono::duration_cast<Durations>(d)), (d -= std::chrono::duration_cast<DurationIn>(std::get<Durations>(retval))))), 0)...
+	};
 	return retval;
 }
 
 struct Timer {
 	std::chrono::time_point<std::chrono::steady_clock> start, end;
-	
+
 	Timer() {
 		start = std::chrono::high_resolution_clock::now();
 	}
@@ -22,8 +24,8 @@ struct Timer {
 	~Timer() {
 		end = std::chrono::high_resolution_clock::now();
 		//https://en.cppreference.com/w/cpp/language/structured_binding
-		auto [h, m, s, ms, ns] = break_down_durations<chrono::hours, chrono::minutes, chrono::seconds, chrono::milliseconds, chrono::nanoseconds>(end - start);
-		cout << endl << "Took function " <<  h.count() << "h : " << m.count() << "m : " << s.count() << "s : " << ms.count() <<"ms to Execute" << endl;
+		auto[h, m, s, ms, ns] = break_down_durations<chrono::hours, chrono::minutes, chrono::seconds, chrono::milliseconds, chrono::nanoseconds>(end - start);
+		cout << endl << "Took function " << h.count() << "h : " << m.count() << "m : " << s.count() << "s : " << ms.count() << "ms to Execute" << endl;
 	}
 
 };
@@ -230,7 +232,7 @@ void test_func() {
 template<typename T>
 void display_vector(vector<T> t) {
 	for (auto i : t) {
-		cout << string(i).substr(0, 10) << endl;
+		cout << i;
 	}
 }
 
@@ -255,13 +257,20 @@ void reverse_vector(vector<T> & input) {
 
 class unlimint {
 public:
+	unlimint(const char * input);
 	unlimint(string input);
 	friend ostream &operator<<(ostream &output, const unlimint &I) {
 		for (auto c : I.digits) {
-			output << c ;
+			output << c;
 		}
 		return output;
 	}
+	/*
+	>>> 10 << 1
+	20
+	>>> 10 >> 1
+	5
+	>>>*/
 	int operator[](int index) {
 		if (index <= num_digits) {
 			return digits[index] - '0';
@@ -270,11 +279,84 @@ public:
 			throw_error(to_string(index) + " is out of the vector range of " + to_string(num_digits) + ".", 1);
 		}
 	};
+	unlimint operator*(unlimint input) {
+		vector<char> x = digits, y = input.digits;
+		//cout << "x = ";
+		//display_vector(x);
+		//cout << endl;
+		//cout << "y = ";
+		//display_vector(y);
+		//cout << endl << endl;
+		vector<string> half;
+		vector<string> doubl;
+		for (char c : x) { //HALF
+			int cd = c - '0';
+			cd = (cd >> 1);
+			//cout << "c = " << cd << endl;
+			half.push_back(to_string(cd));
+		}
+		//cout << endl;
+		for (char v : y) { //DOUBLE
+			int vd = v - '0';
+			vd = (vd << 1);
+			//cout << "v = " << vd << endl;
+			doubl.push_back(to_string(vd));
+		}
+		/*cout << "half = ";
+		display_vector(half);
+		cout << endl;
+		cout << "doubl = ";
+		display_vector(doubl);*/
+		
+		half.resize(half.size() * 2);
+		doubl.resize(doubl.size() * 2);
+		//cout << endl;
+
+		for (auto i = 0; i < half.size()/2; i++) {
+			//cout << "half[" << i << "] = " << half[i] << endl;
+			if (stoi(half[i]) >= 10) {
+				int base = ((10 % stoi(half[i])) / 10);
+				string number = to_string(stoi(half[i]) % 10);
+				int next = atoi(half[i + 1].c_str());
+				string result_number = to_string(next + base);
+				half[i] = number;
+				half[i + 1] = result_number;
+			}
+		}
+
+		for (auto i = 0; i < doubl.size()/2; i++) {
+			if (stoi(doubl[i]) >= 10) {
+				int base = ((10 % stoi(doubl[i])) / 10);
+				string number = to_string(stoi(doubl[i]) % 10);
+				int next = atoi(doubl[i + 1].c_str());
+				string result_number = to_string(next + base);
+				doubl[i] = number;
+				doubl[i + 1] = result_number;
+			}
+		}
+
+		reverse_vector(half);
+		reverse_vector(doubl);
+		cout << "Halfed -> ";
+		display_vector(half);
+		cout << endl;
+		cout << "Doubled -> ";
+		display_vector(doubl);
+
+		return unlimint("123");
+	}
 	unlimint operator+(unlimint input) {
 		vector<string> result;
-		
-		vector<char> max_input = ((digits.size() < input.digits.size()) ? input.digits : digits);
-		vector<char> min_input = ((digits.size() > input.digits.size()) ? input.digits : digits);
+		vector<char> max_input;
+		vector<char> min_input;
+		if (digits.size() == input.digits.size()) {
+			max_input = digits;
+			min_input = input.digits;
+		}
+		else {
+			max_input = ((digits.size() < input.digits.size()) ? input.digits : digits);
+			min_input = ((digits.size() > input.digits.size()) ? input.digits : digits);
+		}
 
 		reverse_vector(max_input);
 		reverse_vector(min_input);
@@ -284,23 +366,22 @@ public:
 		for (auto i = 0; i < required_padding; i++) {
 			min_input.push_back('0');
 		}
-		
+
 		int vector_size = (max_input.size() + min_input.size()) / 2;
-		int memory = 0;
 		for (auto i = 0; i < vector_size; i++) {
-			int result_value = ((max_input[i] - '0') + (min_input[i] - '0')) + memory;
+			int result_value = ((max_input[i] - '0') + (min_input[i] - '0'));
 			result.push_back(to_string(result_value));
 		}
-
+		result.resize(result.size() + 1);
 		for (auto i = 0; i < vector_size; i++) {
 			int current_number = atoi(result[i].c_str());
 			if (current_number >= 10) {
 				int base = ((10 % current_number) / 10);
-				string number = to_string( current_number % 10 );
+				string number = to_string(current_number % 10);
 				int next = atoi(result[i + 1].c_str());
 				string result_number = to_string(next + base);
 				result[i] = number;
-				result[i + 1] = result_number ;
+				result[i + 1] = result_number;
 			}
 		}
 		reverse_vector(result);
@@ -315,15 +396,32 @@ private:
 	bool isInt(string input) { return [&](bool return_value = true) {for (auto c : input) { if (!isdigit(c)) { return_value = false; break; } } return return_value; }(); };
 	vector<char> digits;
 	int num_digits;
+	enum parity { EVEN, ODD };
+	parity ev_od;
 };
 
 
 int main()
 {
-	unlimint s("9182375498326512784432568735613265489375312976539861239748612537964512384795236765756346432464235243523342918237549832651278443256873561326548937531297653986123974861253796451238479523676575634643246423524352334291823754983265127844325687356132654893753129765398612397486125379645123847952367657563464324642352435233429182375498326512784432568735613265489375312976539861239748612537964512384795236765756346432464235243523342918237549832651278443256873561326548937531297653986123974861253796451238479523676575634643246423524352334291823754983265127844325687356132654893753129765398612397486125379645123847952367657563464324642352435233429182375498326512784432568735613265489375312976539861239748612537964512384795236765756346432464235243523342");
-	unlimint a("132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868132453543456567789098766548789378932489723894738947392983298328932893285457678768767868");
+	unlimint s("222222");
+	unlimint a("999999");
+	unlimint ss = "123123123";
 	cout << s + a;
+	cout << ss << endl;
+	cout << endl << "s * a = "<< s * a << endl << endl;
 	//encode_directory("c:\\");
+}
+
+unlimint::unlimint(const char * args)
+{
+	string input(args);
+	if (isInt(input)) {
+		copy(input.begin(), input.end(), back_inserter(digits));
+		num_digits = digits.size();
+	}
+	else {
+		throw_error("Non digit detected in constructor.", 1);
+	}
 }
 
 unlimint::unlimint(string input)
